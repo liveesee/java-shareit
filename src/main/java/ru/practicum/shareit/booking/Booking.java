@@ -15,15 +15,10 @@ import ru.practicum.shareit.user.model.User;
 @AllArgsConstructor
 @Builder
 public class Booking {
-	public static final String STATUS_WAITING = "WAITING";
-	public static final String STATUS_APPROVED = "APPROVED";
-	public static final String STATUS_REJECTED = "REJECTED";
-	public static final String STATUS_CANCELED = "CANCELED";
-
 	private Long id;
 	private LocalDateTime start;
 	private LocalDateTime end;
 	private Item item;
 	private User booker;
-	private String status;
+	private Status status;
 }

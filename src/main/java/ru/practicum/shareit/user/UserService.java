@@ -21,15 +21,6 @@ public class UserService {
 	private final AtomicLong nextId = new AtomicLong(1);
 
 	public UserDto create(UserDto userDto) {
-		if (userDto == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is null");
-		}
-		if (!StringUtils.hasText(userDto.getName())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User name is blank");
-		}
-		if (!StringUtils.hasText(userDto.getEmail())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User email is blank");
-		}
 		if (isEmailTaken(userDto.getEmail(), null)) {
 			throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already in use");
 		}
@@ -113,4 +104,3 @@ public class UserService {
 		return userIdToIgnore == null || !Objects.equals(ownerId.get(), userIdToIgnore);
 	}
 }
-
