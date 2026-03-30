@@ -14,7 +14,7 @@ import ru.practicum.shareit.user.model.User;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class ItemDto {
+public class OwnerItemDto {
 	private Long id;
 	private String name;
 	private String description;

@@ -15,6 +15,9 @@ import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.shareit.item.dto.ItemCreateRequestDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemUpdateRequestDto;
+import ru.practicum.shareit.item.dto.OwnerItemDto;
+import ru.practicum.shareit.item.dto.CommentCreateRequestDto;
+import ru.practicum.shareit.item.dto.CommentDto;
 
 /**
  * TODO Sprint add-controllers.
@@ -40,6 +43,13 @@ public class ItemController {
 		return itemService.update(userId, itemId, itemDto);
 	}
 
+	@PostMapping("/{itemId}/comment")
+	public CommentDto addComment(@RequestHeader(USER_ID_HEADER) long userId,
+								 @PathVariable long itemId,
+								 @Valid @RequestBody CommentCreateRequestDto commentDto) {
+		return itemService.addComment(userId, itemId, commentDto);
+	}
+
 	@GetMapping("/{itemId}")
 	public ItemDto getById(@RequestHeader(USER_ID_HEADER) long userId,
 						   @PathVariable long itemId) {
@@ -47,7 +57,7 @@ public class ItemController {
 	}
 
 	@GetMapping
-	public List<ItemDto> getAllByOwner(@RequestHeader(USER_ID_HEADER) long userId) {
+	public List<OwnerItemDto> getAllByOwner(@RequestHeader(USER_ID_HEADER) long userId) {
 		return itemService.getAllByOwner(userId);
 	}
 
