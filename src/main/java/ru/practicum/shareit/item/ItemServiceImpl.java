@@ -110,7 +110,7 @@ public class ItemServiceImpl implements ItemService {
 		comment.setItem(item);
 		comment.setCreated(LocalDateTime.now());
 
-		return ItemMapper.toCommentDto(commentRepository.save(comment));
+		return ItemMapper.toCommentDto(commentRepository.saveAndFlush(comment));
 	}
 
 	@Override
