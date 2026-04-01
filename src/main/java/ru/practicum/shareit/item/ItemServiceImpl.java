@@ -1,7 +1,10 @@
 package ru.practicum.shareit.item;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -34,19 +37,6 @@ public class ItemServiceImpl implements ItemService {
 
 	@Override
 	public ItemDto create(long ownerId, ItemCreateRequestDto itemDto) {
-		if (itemDto == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Item is null");
-		}
-		if (!StringUtils.hasText(itemDto.getName())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Item name is blank");
-		}
-		if (!StringUtils.hasText(itemDto.getDescription())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Item description is blank");
-		}
-		if (itemDto.getAvailable() == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Item availability is null");
-		}
-
 		Item item = ItemMapper.toItem(itemDto);
 		item.setOwner(userService.getUserOrThrow(ownerId));
 		return ItemMapper.toItemDto(itemRepository.save(item));
@@ -92,17 +82,20 @@ public class ItemServiceImpl implements ItemService {
 	@Transactional(readOnly = true)
 	public List<OwnerItemDto> getAllByOwner(long ownerId) {
 		userService.getUserOrThrow(ownerId);
-		return itemRepository.findAllByOwnerIdOrderByIdAsc(ownerId).stream()
-				.map(this::toOwnerItemDto)
+		List<Item> items = itemRepository.findAllByOwnerIdOrderByIdAsc(ownerId);
+		List<Long> itemIds = items.stream()
+				.map(Item::getId)
+				.toList();
+		Map<Long, List<Booking>> bookingsByItemId = getBookingsByItemId(itemIds);
+		Map<Long, List<CommentDto>> commentsByItemId = getCommentDtosByItemId(itemIds);
+
+		return items.stream()
+				.map(item -> toOwnerItemDto(item, bookingsByItemId, commentsByItemId))
 				.toList();
 	}
 
 	@Override
 	public CommentDto addComment(long userId, long itemId, CommentCreateRequestDto commentDto) {
-		if (commentDto == null || !StringUtils.hasText(commentDto.getText())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Comment text is blank");
-		}
-
 		User author = userService.getUserOrThrow(userId);
 		Item item = getExisting(itemId);
 		boolean hasCompletedBooking = bookingRepository.existsByBookerIdAndItemIdAndStatusAndEndBefore(
@@ -132,16 +125,17 @@ public class ItemServiceImpl implements ItemService {
 				.toList();
 	}
 
-	@Transactional(readOnly = true)
 	private Item getExisting(long itemId) {
 		return itemRepository.findById(itemId)
 				.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item not found"));
 	}
 
-	private OwnerItemDto toOwnerItemDto(Item item) {
+	private OwnerItemDto toOwnerItemDto(Item item,
+										Map<Long, List<Booking>> bookingsByItemId,
+										Map<Long, List<CommentDto>> commentsByItemId) {
 		OwnerItemDto dto = ItemMapper.toOwnerItemDto(item);
 		LocalDateTime now = LocalDateTime.now();
-		List<Booking> bookings = bookingRepository.findAllByItemIdOrderByStartAsc(item.getId());
+		List<Booking> bookings = bookingsByItemId.getOrDefault(item.getId(), List.of());
 
 		LocalDateTime lastBooking = bookings.stream()
 				.filter(booking -> !booking.getStart().isAfter(now))
@@ -157,7 +151,7 @@ public class ItemServiceImpl implements ItemService {
 
 		dto.setLastBooking(lastBooking);
 		dto.setNextBooking(nextBooking);
-		dto.setComments(getComments(item.getId()));
+		dto.setComments(commentsByItemId.getOrDefault(item.getId(), List.of()));
 		return dto;
 	}
 
@@ -194,5 +188,24 @@ public class ItemServiceImpl implements ItemService {
 		return commentRepository.findAllByItemIdOrderByCreatedAsc(itemId).stream()
 				.map(ItemMapper::toCommentDto)
 				.toList();
+	}
+
+	private Map<Long, List<Booking>> getBookingsByItemId(List<Long> itemIds) {
+		if (itemIds.isEmpty()) {
+			return Collections.emptyMap();
+		}
+		return bookingRepository.findAllByItemIdInOrderByItemIdAscStartAsc(itemIds).stream()
+				.collect(Collectors.groupingBy(booking -> booking.getItem().getId()));
+	}
+
+	private Map<Long, List<CommentDto>> getCommentDtosByItemId(List<Long> itemIds) {
+		if (itemIds.isEmpty()) {
+			return Collections.emptyMap();
+		}
+		return commentRepository.findAllByItemIdInOrderByItemIdAscCreatedAsc(itemIds).stream()
+				.collect(Collectors.groupingBy(
+						comment -> comment.getItem().getId(),
+						Collectors.mapping(ItemMapper::toCommentDto, Collectors.toList())
+				));
 	}
 }

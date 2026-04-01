@@ -13,4 +13,5 @@ import lombok.Setter;
 @Builder
 public class BookingBookerDto {
 	private Long id;
+	private String name;
 }

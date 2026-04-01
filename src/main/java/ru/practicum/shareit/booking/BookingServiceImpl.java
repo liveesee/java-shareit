@@ -40,6 +40,13 @@ public class BookingServiceImpl implements BookingService {
 		if (item.getOwner() != null && item.getOwner().getId() != null && item.getOwner().getId().equals(userId)) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Owner cannot book own item");
 		}
+		if (bookingRepository.existsOverlappingBooking(
+				item.getId(),
+				bookingDto.getStart(),
+				bookingDto.getEnd(),
+				List.of(Status.WAITING, Status.APPROVED))) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking dates overlap with existing booking");
+		}
 
 		Booking booking = BookingMapper.toBooking(bookingDto);
 		booking.setBooker(booker);
@@ -73,7 +80,7 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional(readOnly = true)
 	public List<BookingDto> getAllByBooker(long userId, String state) {
 		userService.getUserOrThrow(userId);
-		BookingState bookingState = parseState(state);
+		BookingState bookingState = BookingState.from(state);
 		LocalDateTime now = LocalDateTime.now();
 
 		return bookingRepository.findAllByBookerIdOrderByStartDesc(userId).stream()
@@ -86,7 +93,7 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional(readOnly = true)
 	public List<BookingDto> getAllByOwner(long userId, String state) {
 		userService.getUserOrThrow(userId);
-		BookingState bookingState = parseState(state);
+		BookingState bookingState = BookingState.from(state);
 		LocalDateTime now = LocalDateTime.now();
 
 		return bookingRepository.findAllByItemOwnerIdOrderByStartDesc(userId).stream()
@@ -114,28 +121,8 @@ public class BookingServiceImpl implements BookingService {
 	}
 
 	private void validateBookingDates(BookingCreateRequestDto bookingDto) {
-		if (bookingDto == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking is null");
-		}
-		if (bookingDto.getItemId() == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Item id is null");
-		}
-		if (bookingDto.getStart() == null || bookingDto.getEnd() == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking dates are required");
-		}
 		if (!bookingDto.getEnd().isAfter(bookingDto.getStart())) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking end must be after start");
-		}
-		if (!bookingDto.getStart().isAfter(LocalDateTime.now())) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking start must be in the future");
-		}
-	}
-
-	private BookingState parseState(String state) {
-		try {
-			return BookingState.valueOf(state);
-		} catch (IllegalArgumentException | NullPointerException e) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown state: " + state);
 		}
 	}
 

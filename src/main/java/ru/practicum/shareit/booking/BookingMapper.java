@@ -52,6 +52,7 @@ public final class BookingMapper {
 		}
 		return BookingBookerDto.builder()
 				.id(user.getId())
+				.name(user.getName())
 				.build();
 	}
 }
