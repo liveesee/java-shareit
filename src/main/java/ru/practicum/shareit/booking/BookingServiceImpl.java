@@ -44,7 +44,7 @@ public class BookingServiceImpl implements BookingService {
 				item.getId(),
 				bookingDto.getStart(),
 				bookingDto.getEnd(),
-				List.of(Status.WAITING, Status.APPROVED))) {
+				List.of(Status.APPROVED))) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Booking dates overlap with existing booking");
 		}
 
@@ -80,7 +80,8 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional(readOnly = true)
 	public List<BookingDto> getAllByBooker(long userId, String state) {
 		userService.getUserOrThrow(userId);
-		BookingState bookingState = BookingState.from(state);
+		BookingState bookingState = BookingState.from(state)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown state: " + state));
 		LocalDateTime now = LocalDateTime.now();
 
 		return bookingRepository.findAllByBookerIdOrderByStartDesc(userId).stream()
@@ -93,7 +94,8 @@ public class BookingServiceImpl implements BookingService {
 	@Transactional(readOnly = true)
 	public List<BookingDto> getAllByOwner(long userId, String state) {
 		userService.getUserOrThrow(userId);
-		BookingState bookingState = BookingState.from(state);
+		BookingState bookingState = BookingState.from(state)
+				.orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown state: " + state));
 		LocalDateTime now = LocalDateTime.now();
 
 		return bookingRepository.findAllByItemOwnerIdOrderByStartDesc(userId).stream()

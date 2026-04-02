@@ -1,7 +1,7 @@
 package ru.practicum.shareit.booking.model;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.server.ResponseStatusException;
+import java.util.Arrays;
+import java.util.Optional;
 
 public enum BookingState {
 	ALL,
@@ -11,11 +11,12 @@ public enum BookingState {
 	WAITING,
 	REJECTED;
 
-	public static BookingState from(String state) {
-		try {
-			return BookingState.valueOf(state);
-		} catch (IllegalArgumentException | NullPointerException e) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Unknown state: " + state);
+	public static Optional<BookingState> from(String state) {
+		if (state == null) {
+			return Optional.empty();
 		}
+		return Arrays.stream(values())
+				.filter(value -> value.name().equals(state))
+				.findFirst();
 	}
 }
