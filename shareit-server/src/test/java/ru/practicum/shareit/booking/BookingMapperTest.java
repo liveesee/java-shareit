@@ -14,40 +14,61 @@ import ru.practicum.shareit.user.model.User;
 
 class BookingMapperTest {
 	@Test
-	void toBookingShouldMapCreateDto() {
-		LocalDateTime start = LocalDateTime.now().plusDays(1);
-		LocalDateTime end = start.plusDays(1);
+	void toBookingShouldReturnNullForNullDto() {
+		assertNull(BookingMapper.toBooking(null));
+	}
 
-		Booking booking = BookingMapper.toBooking(BookingCreateRequestDto.builder()
-				.itemId(1L)
-				.start(start)
-				.end(end)
-				.build());
+	@Test
+	void toBookingShouldMapDates() {
+		LocalDateTime start = LocalDateTime.now();
+		LocalDateTime end = start.plusDays(1);
+		BookingCreateRequestDto dto = BookingCreateRequestDto.builder().itemId(1L).start(start).end(end).build();
+
+		Booking booking = BookingMapper.toBooking(dto);
 
 		assertEquals(start, booking.getStart());
 		assertEquals(end, booking.getEnd());
 	}
 
 	@Test
-	void toBookingDtoShouldMapBooking() {
+	void toBookingDtoShouldReturnNullForNullBooking() {
+		assertNull(BookingMapper.toBookingDto(null));
+	}
+
+	@Test
+	void toBookingDtoShouldMapNestedNulls() {
 		Booking booking = Booking.builder()
 				.id(1L)
-				.start(LocalDateTime.now().plusDays(1))
-				.end(LocalDateTime.now().plusDays(2))
+				.start(LocalDateTime.now())
+				.end(LocalDateTime.now().plusDays(1))
 				.status(Status.WAITING)
-				.item(Item.builder().id(2L).name("Drill").build())
-				.booker(User.builder().id(3L).name("Ivan").build())
+				.item(null)
+				.booker(null)
 				.build();
 
 		BookingDto dto = BookingMapper.toBookingDto(booking);
 
 		assertEquals(1L, dto.getId());
-		assertEquals(2L, dto.getItem().getId());
-		assertEquals(3L, dto.getBooker().getId());
+		assertNull(dto.getItem());
+		assertNull(dto.getBooker());
 	}
 
 	@Test
-	void toBookingShouldReturnNullForNullInput() {
-		assertNull(BookingMapper.toBooking(null));
+	void toBookingDtoShouldMapItemAndBooker() {
+		Booking booking = Booking.builder()
+				.id(2L)
+				.start(LocalDateTime.now())
+				.end(LocalDateTime.now().plusDays(1))
+				.status(Status.APPROVED)
+				.item(Item.builder().id(3L).name("Drill").build())
+				.booker(User.builder().id(4L).name("Ivan").build())
+				.build();
+
+		BookingDto dto = BookingMapper.toBookingDto(booking);
+
+		assertEquals(3L, dto.getItem().getId());
+		assertEquals("Drill", dto.getItem().getName());
+		assertEquals(4L, dto.getBooker().getId());
+		assertEquals("Ivan", dto.getBooker().getName());
 	}
 }

@@ -97,4 +97,46 @@ class ItemMapperTest {
 	void toItemShouldReturnNullForNullInput() {
 		assertNull(ItemMapper.toItem(null));
 	}
+
+	@Test
+	void updateItemShouldDoNothingWhenItemNull() {
+		ItemMapper.updateItem(null, ItemUpdateRequestDto.builder().name("X").build());
+	}
+
+	@Test
+	void updateItemShouldDoNothingWhenDtoNull() {
+		Item item = Item.builder().name("Old").build();
+		ItemMapper.updateItem(item, null);
+		assertEquals("Old", item.getName());
+	}
+
+	@Test
+	void toItemDtoShouldReturnNullForNullItem() {
+		assertNull(ItemMapper.toItemDto(null));
+	}
+
+	@Test
+	void toOwnerItemDtoShouldReturnNullForNullItem() {
+		assertNull(ItemMapper.toOwnerItemDto(null));
+	}
+
+	@Test
+	void toCommentShouldReturnNullForNullDto() {
+		assertNull(ItemMapper.toComment(null));
+	}
+
+	@Test
+	void toCommentDtoShouldReturnNullForNullComment() {
+		assertNull(ItemMapper.toCommentDto(null));
+	}
+
+	@Test
+	void toCommentDtoShouldMapWhenAuthorNull() {
+		Comment comment = Comment.builder().id(1L).text("Hi").author(null).created(LocalDateTime.now()).build();
+
+		CommentDto dto = ItemMapper.toCommentDto(comment);
+
+		assertEquals(1L, dto.getId());
+		assertNull(dto.getAuthorName());
+	}
 }

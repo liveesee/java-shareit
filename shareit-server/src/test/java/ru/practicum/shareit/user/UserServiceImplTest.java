@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;
 import java.util.List;
 import java.util.Set;
@@ -118,6 +120,94 @@ class UserServiceImplTest {
 				() -> userService.create(UserDto.builder().name("Ivan").email("ivan@test.com").build()));
 
 		assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+		verify(userRepository, never()).save(any(User.class));
+	}
+
+	@Test
+	void updateShouldThrowWhenDtoNull() {
+		when(userRepository.findById(1L)).thenReturn(Optional.of(User.builder().id(1L).name("Old").email("old@test.com").build()));
+
+		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+				() -> userService.update(1L, null));
+
+		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+		verify(userRepository, never()).save(any(User.class));
+	}
+
+	@Test
+	void updateShouldThrowWhenNameBlank() {
+		when(userRepository.findById(1L)).thenReturn(Optional.of(User.builder().id(1L).name("Old").email("old@test.com").build()));
+
+		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+				() -> userService.update(1L, UserDto.builder().name("   ").build()));
+
+		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+	}
+
+	@Test
+	void updateShouldThrowWhenEmailBlank() {
+		when(userRepository.findById(1L)).thenReturn(Optional.of(User.builder().id(1L).name("Old").email("old@test.com").build()));
+
+		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+				() -> userService.update(1L, UserDto.builder().email(" ").build()));
+
+		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
+	}
+
+	@Test
+	void updateShouldThrowConflictWhenEmailTaken() {
+		when(userRepository.findById(1L)).thenReturn(Optional.of(User.builder().id(1L).name("Old").email("old@test.com").build()));
+		when(validator.validate(any(UserDto.class))).thenReturn(Set.of());
+		when(userRepository.existsByEmailAndIdNot("taken@test.com", 1L)).thenReturn(true);
+
+		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+				() -> userService.update(1L, UserDto.builder().email("taken@test.com").build()));
+
+		assertEquals(HttpStatus.CONFLICT, exception.getStatusCode());
+	}
+
+	@Test
+	void getByIdShouldThrowWhenMissing() {
+		when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+				() -> userService.getById(1L));
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void getUserOrThrowShouldThrowWhenMissing() {
+		when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+				() -> userService.getUserOrThrow(1L));
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+	}
+
+	@Test
+	void deleteShouldThrowWhenMissing() {
+		when(userRepository.findById(1L)).thenReturn(Optional.empty());
+
+		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+				() -> userService.delete(1L));
+
+		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
+		verify(userRepository, never()).deleteById(any());
+	}
+
+	@Test
+	@SuppressWarnings("unchecked")
+	void createShouldThrowWhenValidatorReportsViolations() {
+		ConstraintViolation<UserDto> violation = mock(ConstraintViolation.class);
+		when(violation.getMessage()).thenReturn("bad field");
+		when(validator.validate(any(UserDto.class))).thenReturn(Set.of(violation));
+
+		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
+				() -> userService.create(UserDto.builder().name("Ivan").email("ivan@test.com").build()));
+
+		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
 		verify(userRepository, never()).save(any(User.class));
 	}
 }

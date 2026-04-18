@@ -23,4 +23,9 @@ class UserMapperTest {
 	void toUserDtoShouldHandleNull() {
 		assertNull(UserMapper.toUserDto(null));
 	}
+
+	@Test
+	void toUserShouldHandleNull() {
+		assertNull(UserMapper.toUser(null));
+	}
 }
