@@ -1,21 +1,26 @@
 services:
   gateway:
-    build: gateway
+    build:
+      context: .
+      dockerfile: gateway/Dockerfile
     image: shareit-gateway
     container_name: shareit-gateway
     ports:
       - "8080:8080"
     depends_on:
-      - server
+      server:
+        condition: service_started
     environment:
       - SHAREIT_SERVER_URL=http://server:8080
 
   server:
-    build: server
+    build:
+      context: .
+      dockerfile: server/Dockerfile
     image: shareit-server
     container_name: shareit-server
     ports:
-      - "9090:8080" //тест
+      - "9090:8080"
     depends_on:
       db:
         condition: service_healthy
