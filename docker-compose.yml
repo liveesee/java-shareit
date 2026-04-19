@@ -15,7 +15,7 @@ services:
     image: shareit-server
     container_name: shareit-server
     ports:
-      - "9090:8080"
+      - "9090:8080" //тест
     depends_on:
       db:
         condition: service_healthy
