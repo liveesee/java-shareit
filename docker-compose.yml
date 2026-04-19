@@ -8,14 +8,14 @@ services:
     depends_on:
       - server
     environment:
-      - SHAREIT_SERVER_URL=http://server:9090
+      - SHAREIT_SERVER_URL=http://server:8080
 
   server:
     build: server
     image: shareit-server
     container_name: shareit-server
     ports:
-      - "9090:9090"
+      - "9090:8080"
     depends_on:
       db:
         condition: service_healthy
