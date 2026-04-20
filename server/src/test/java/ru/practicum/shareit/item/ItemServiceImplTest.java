@@ -12,11 +12,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import jakarta.validation.Validator;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -54,8 +52,6 @@ class ItemServiceImplTest {
 	private ItemRequestRepository itemRequestRepository;
 	@Mock
 	private UserService userService;
-	@Mock
-	private Validator validator;
 
 	@InjectMocks
 	private ItemServiceImpl itemService;
@@ -72,7 +68,6 @@ class ItemServiceImplTest {
 				.build();
 
 		when(userService.getUserOrThrow(1L)).thenReturn(owner);
-		when(validator.validate(createDto)).thenReturn(Set.of());
 		when(itemRequestRepository.findById(3L)).thenReturn(Optional.of(request));
 		when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> {
 			Item item = invocation.getArgument(0);
@@ -101,7 +96,6 @@ class ItemServiceImplTest {
 				.build();
 
 		when(userService.getUserOrThrow(1L)).thenReturn(owner);
-		when(validator.validate(createDto)).thenReturn(Set.of());
 		when(itemRepository.save(any(Item.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
 		ItemDto result = itemService.create(1L, createDto);
@@ -125,7 +119,6 @@ class ItemServiceImplTest {
 				.build();
 
 		when(userService.getUserOrThrow(1L)).thenReturn(owner);
-		when(validator.validate(createDto)).thenReturn(Set.of());
 		when(itemRequestRepository.findById(99L)).thenReturn(Optional.empty());
 
 		ResponseStatusException exception = assertThrows(ResponseStatusException.class,

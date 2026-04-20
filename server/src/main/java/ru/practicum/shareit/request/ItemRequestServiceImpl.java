@@ -1,12 +1,9 @@
 package ru.practicum.shareit.request;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,7 +24,6 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 	private final ItemRequestRepository itemRequestRepository;
 	private final ItemRepository itemRepository;
 	private final UserService userService;
-	private final Validator validator;
 
 	@Override
 	public ItemRequestDto create(long userId, ItemRequestDto itemRequestDto) {
@@ -96,11 +92,6 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 	private void validateItemRequestDto(ItemRequestDto itemRequestDto) {
 		if (itemRequestDto == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Request is null");
-		}
-
-		Set<ConstraintViolation<ItemRequestDto>> violations = validator.validate(itemRequestDto);
-		if (!violations.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, violations.iterator().next().getMessage());
 		}
 	}
 }

@@ -1,12 +1,9 @@
 package ru.practicum.shareit.item;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -40,11 +37,12 @@ public class ItemServiceImpl implements ItemService {
 	private final CommentRepository commentRepository;
 	private final ItemRequestRepository itemRequestRepository;
 	private final UserService userService;
-	private final Validator validator;
 
 	@Override
 	public ItemDto create(long ownerId, ItemCreateRequestDto itemDto) {
-		validateItemCreateRequest(itemDto);
+		if (itemDto == null) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Item is null");
+		}
 		Item item = ItemMapper.toItem(itemDto);
 		item.setOwner(userService.getUserOrThrow(ownerId));
 		if (itemDto.getRequestId() != null) {
@@ -223,16 +221,5 @@ public class ItemServiceImpl implements ItemService {
 						comment -> comment.getItem().getId(),
 						Collectors.mapping(ItemMapper::toCommentDto, Collectors.toList())
 				));
-	}
-
-	private void validateItemCreateRequest(ItemCreateRequestDto itemDto) {
-		if (itemDto == null) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Item is null");
-		}
-
-		Set<ConstraintViolation<ItemCreateRequestDto>> violations = validator.validate(itemDto);
-		if (!violations.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, violations.iterator().next().getMessage());
-		}
 	}
 }

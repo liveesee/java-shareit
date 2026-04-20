@@ -1,9 +1,6 @@
 package ru.practicum.shareit.user;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
 import java.util.List;
-import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -19,7 +16,6 @@ import ru.practicum.shareit.user.storage.UserRepository;
 @Transactional
 public class UserServiceImpl implements UserService {
 	private final UserRepository userRepository;
-	private final Validator validator;
 
 	@Override
 	public UserDto create(UserDto userDto) {
@@ -95,11 +91,6 @@ public class UserServiceImpl implements UserService {
 	private void validateUserDto(UserDto userDto) {
 		if (userDto == null) {
 			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "User is null");
-		}
-
-		Set<ConstraintViolation<UserDto>> violations = validator.validate(userDto);
-		if (!violations.isEmpty()) {
-			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, violations.iterator().next().getMessage());
 		}
 	}
 }

@@ -8,10 +8,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import jakarta.validation.Validator;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -36,8 +34,6 @@ class ItemRequestServiceImplTest {
 	private ItemRepository itemRepository;
 	@Mock
 	private UserService userService;
-	@Mock
-	private Validator validator;
 
 	@InjectMocks
 	private ItemRequestServiceImpl itemRequestService;
@@ -47,7 +43,6 @@ class ItemRequestServiceImplTest {
 		User requester = User.builder().id(1L).name("Requester").email("req@test.com").build();
 		ItemRequestDto requestDto = ItemRequestDto.builder().description("Need drill").build();
 
-		when(validator.validate(requestDto)).thenReturn(Set.of());
 		when(userService.getUserOrThrow(1L)).thenReturn(requester);
 		when(itemRequestRepository.save(any(ItemRequest.class))).thenAnswer(invocation -> {
 			ItemRequest itemRequest = invocation.getArgument(0);

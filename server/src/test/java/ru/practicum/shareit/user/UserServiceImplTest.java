@@ -4,15 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import jakarta.validation.ConstraintViolation;
-import jakarta.validation.Validator;
 import java.util.List;
-import java.util.Set;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,8 +25,6 @@ import ru.practicum.shareit.user.storage.UserRepository;
 class UserServiceImplTest {
 	@Mock
 	private UserRepository userRepository;
-	@Mock
-	private Validator validator;
 
 	@InjectMocks
 	private UserServiceImpl userService;
@@ -38,7 +32,6 @@ class UserServiceImplTest {
 	@Test
 	void createShouldSaveUser() {
 		UserDto userDto = UserDto.builder().name("Ivan").email("ivan@test.com").build();
-		when(validator.validate(userDto)).thenReturn(Set.of());
 		when(userRepository.existsByEmail("ivan@test.com")).thenReturn(false);
 		when(userRepository.save(any(User.class))).thenAnswer(invocation -> {
 			User user = invocation.getArgument(0);
@@ -56,7 +49,6 @@ class UserServiceImplTest {
 	void updateShouldChangeNameAndEmail() {
 		User existing = User.builder().id(1L).name("Old").email("old@test.com").build();
 		UserDto updateDto = UserDto.builder().name("New").email("new@test.com").build();
-		when(validator.validate(any(UserDto.class))).thenReturn(Set.of());
 		when(userRepository.findById(1L)).thenReturn(Optional.of(existing));
 		when(userRepository.existsByEmailAndIdNot("new@test.com", 1L)).thenReturn(false);
 		when(userRepository.save(existing)).thenReturn(existing);
@@ -114,7 +106,6 @@ class UserServiceImplTest {
 	@Test
 	void createShouldThrowConflictWhenEmailExists() {
 		when(userRepository.existsByEmail("ivan@test.com")).thenReturn(true);
-		when(validator.validate(org.mockito.ArgumentMatchers.any(UserDto.class))).thenReturn(Set.of());
 
 		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
 				() -> userService.create(UserDto.builder().name("Ivan").email("ivan@test.com").build()));
@@ -157,7 +148,6 @@ class UserServiceImplTest {
 	@Test
 	void updateShouldThrowConflictWhenEmailTaken() {
 		when(userRepository.findById(1L)).thenReturn(Optional.of(User.builder().id(1L).name("Old").email("old@test.com").build()));
-		when(validator.validate(any(UserDto.class))).thenReturn(Set.of());
 		when(userRepository.existsByEmailAndIdNot("taken@test.com", 1L)).thenReturn(true);
 
 		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
@@ -195,19 +185,5 @@ class UserServiceImplTest {
 
 		assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
 		verify(userRepository, never()).deleteById(any());
-	}
-
-	@Test
-	@SuppressWarnings("unchecked")
-	void createShouldThrowWhenValidatorReportsViolations() {
-		ConstraintViolation<UserDto> violation = mock(ConstraintViolation.class);
-		when(violation.getMessage()).thenReturn("bad field");
-		when(validator.validate(any(UserDto.class))).thenReturn(Set.of(violation));
-
-		ResponseStatusException exception = assertThrows(ResponseStatusException.class,
-				() -> userService.create(UserDto.builder().name("Ivan").email("ivan@test.com").build()));
-
-		assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
-		verify(userRepository, never()).save(any(User.class));
 	}
 }
